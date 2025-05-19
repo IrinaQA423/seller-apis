@@ -11,7 +11,7 @@ logger = logging.getLogger(__file__)
 
 
 def get_product_list(page, campaign_id, access_token):
-    """Получает список товаров из Яндекс.Маркета.
+    """Получает список товаров из Яндекс Маркета.
 
     Отправляет запрос к API Яндекс Маркета для получения списка товаров,
     используя указанный токен доступа и идентификатор кампании.
@@ -30,14 +30,18 @@ def get_product_list(page, campaign_id, access_token):
 
     Исключения:
         HTTPError: Если запрос завершился неудачей (например, неверные параметры или проблемы с сетью).
+        ValueError: Если аргументы не соответствуют ожидаемым типам (например, page не строка,campaign_id не целое число или access_token None).
 
     Примеры  корректного ввода:
-            get_product_list("some_page_token", "123456", "your_access_token")
+        >>> get_product_list("some_page_token", "123456", "your_access_token")
 
     Примеры  некорректного ввода:
-            get_product_list(123, "123456", "your_access_token")  # page должен быть строкой
-            get_product_list("some_page_token", "invalid_campaign_id", "your_access_token")  # некорректный campaign_id
-            get_product_list("some_page_token", "123456", None)  # access_token не должен быть None
+        >>> get_product_list(123, "123456", "your_access_token")  
+        ValueError: page должен быть строкой
+        >>> get_product_list("some_page_token", "invalid_campaign_id", "your_access_token")  
+        ValueError: некорректный campaign_id
+        >>> get_product_list("some_page_token", "123456", None)  
+        ValueError: access_token не должен быть None
     """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
@@ -71,18 +75,21 @@ def update_stocks(stocks, campaign_id, access_token):
         access_token (str): Токен доступа для авторизации в API.
 
     Возвращает:
-        dict: Ответ API в формате JSON, содержащий информацию об обновленных запасах.
+        dict: Ответ API в виде словаря, содержащий информацию об обновленных запасах.
 
     Исключения:
         HTTPError: Если запрос завершился неудачей (например, неверный токен доступа,
             некорректный идентификатор кампании или неверный формат данных).
+        ValueError: Если аргументы  имеют  неверный  формат.
     
     Примеры  корректного ввода:
-            update_stocks(["sku1", "sku2"], "12345", "your_access_token")
+        >>> update_stocks(["sku1", "sku2"], "12345", "your_access_token")
         
     Примеры  некорректного ввода:
-            update_stocks("sku1, sku2", "12345", "your_access_token")  # stocks должен быть списком
-            update_stocks(["sku1", "sku2"], 12345, "your_access_token")  # campaign_id должен быть строкой
+        >>> update_stocks("sku1, sku2", "12345", "your_access_token")  
+        ValueError: stocks должен быть списком
+        >>> update_stocks(["sku1", "sku2"], 12345, "your_access_token")  
+        ValueError: campaign_id должен быть строкой
     """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
@@ -112,18 +119,21 @@ def update_price(prices, campaign_id, access_token):
         access_token (str): Токен доступа для авторизации в API.
 
     Возвращает:
-        dict: Ответ API в формате JSON, содержащий информацию об обновленных ценах.
+        dict: Ответ API в виде словаря, содержащий информацию об обновленных ценах.
 
     Исключения:
         HTTPError: Если запрос завершился неудачей (например, неверный токен доступа,
             некорректный идентификатор кампании или неверный формат данных).
+        ValueError: Если аргументы  имеют  неверный  формат.
     
     Примеры  корректного ввода:
-            update_price([{"sku": "sku1", "price": 100}, {"sku": "sku2", "price": 200}], "12345", "your_access_token")
+        >>> update_price([{"sku": "sku1", "price": 100}, {"sku": "sku2", "price": 200}], "12345", "your_access_token")
         
     Примеры  некорректного ввода:
-            update_price([{"sku": "sku1", "price": "сто"], "12345", "your_access_token")  # цена должна быть числом
-            update_price([{"sku": "sku1", "price": 100}], 12345, "your_access_token")  # campaign_id должен быть строкой
+        >>> update_price([{"sku": "sku1", "price": "сто"], "12345", "your_access_token")  
+        ValueError: цена должна быть числом
+        >>> update_price([{"sku": "sku1", "price": 100}], 12345, "your_access_token")  
+        ValueError: campaign_id должен быть строкой
     """
     endpoint_url = "https://api.partner.market.yandex.ru/"
     headers = {
@@ -160,11 +170,13 @@ def get_offer_ids(campaign_id, market_token):
         Exception: Если происходит ошибка при запросе данных.
 
     Примеры  корректного ввода:
-            offer_ids = get_offer_ids("12345", "your_market_token")
+        >>> offer_ids = get_offer_ids("12345", "your_market_token")
 
     Примеры  некорректного ввода:
-            get_offer_ids("", "your_market_token")  # Вызывает ValueError
-            get_offer_ids("12345", "")  # Вызывает ValueError
+        >>> get_offer_ids("", "your_market_token")  
+        ValueError
+        >>> get_offer_ids("12345", "")  
+        ValueError
     """
     page = ""
     product_list = []
@@ -186,8 +198,8 @@ def create_stocks(watch_remnants, offer_ids, warehouse_id):
     Аргументы:
         watch_remnants (list): Список словарей, содержащих информацию о часах.
             Каждый словарь должен содержать ключи:
-                - "Код" (str): Код товара.
-                - "Количество" (str): Количество товара (например, "1", ">10").
+                "Код" (str): Код товара.
+                "Количество" (str): Количество товара (например, "1", ">10").
         offer_ids (list): Список идентификаторов товаров (str), которые необходимо проверить.
         warehouse_id (str): Идентификатор склада, к которому относятся запасы.
 
@@ -206,8 +218,11 @@ def create_stocks(watch_remnants, offer_ids, warehouse_id):
                 ]
             }
 
+    Исключения: 
+        ValueError: Если аргументы  имеют  неверный  формат.
+
     Примеры  корректного ввода:
-        create_stocks(
+        >>> create_stocks(
             watch_remnants=[
                 {"Код": "123", "Количество": "5"},
                 {"Код": "456", "Количество": ">10"},
@@ -218,13 +233,14 @@ def create_stocks(watch_remnants, offer_ids, warehouse_id):
         )
         
     Примеры  некорректного ввода:
-        create_stocks(
+        >>> create_stocks(
             watch_remnants=[
                 {"Код": "123", "Количество": "abc"},  # Некорректное количество
             ],
             offer_ids="not_a_list",  # Некорректный тип
             warehouse_id=123  # Некорректный тип
         )
+         ValueError
     """
     stocks = list()
     date = str(datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z")
@@ -275,8 +291,8 @@ def create_prices(watch_remnants, offer_ids):
     Аргументы:
         watch_remnants (list): Список словарей, содержащих информацию о часах.
             Каждый словарь должен содержать ключи:
-                - "Код" (str): Код товара.
-                - "Цена" (str или float): Цена товара, которую необходимо конвертировать.
+                "Код" (str): Код товара.
+                "Цена" (str или float): Цена товара, которую необходимо конвертировать.
         offer_ids (list): Список идентификаторов товаров (str), которые необходимо проверить.
 
     Возвращает:
@@ -290,8 +306,13 @@ def create_prices(watch_remnants, offer_ids):
                 }
             }
 
+    Исключения:
+        ValueError: Если  аргументы  имеют  неверный  формат.
+        KeyError: если  в словаре watch_remnants отсутствует необходимый  ключ.
+
+
     Примеры  корректного ввода:
-        create_prices(
+        >>> create_prices(
             watch_remnants=[
                 {"Код": "123", "Цена": "1000"},
                 {"Код": "456", "Цена": 1500.75},
@@ -301,12 +322,13 @@ def create_prices(watch_remnants, offer_ids):
         )
         
     Примеры  некорректного ввода:
-        create_prices(
+        >>> create_prices(
             watch_remnants=[
                 {"Код": "123", "Цена": "abc"},  # Некорректное значение цены
             ],
             offer_ids="not_a_list"  # Некорректный тип, ожидается список
         )
+        ValueError  
     """
     prices = []
     for watch in watch_remnants:
@@ -336,16 +358,20 @@ async def upload_prices(watch_remnants, campaign_id, market_token):
     Аргументы:
         watch_remnants (list): Список словарей, содержащих информацию о часах.
             Каждый словарь должен содержать ключи:
-                - "Код" (str): Код товара.
-                - "Цена" (str или float): Цена товара, которую необходимо конвертировать.
+                "Код" (str): Код товара.
+                "Цена" (str или float): Цена товара, которую необходимо конвертировать.
         campaign_id (str): Идентификатор кампании.
         market_token (str): Токен для доступа к API рынка.
 
     Возвращает:
         list: Список словарей с ценами, которые были загружены на рынок.
 
+    Исключения:
+        ValueError: Если  аргументы  имеют  неверный  формат.
+        KeyError: если  в словаре watch_remnants отсутствует необходимый  ключ.
+
     Примеры  корректного ввода:
-        await upload_prices(
+        >>> await upload_prices(
             watch_remnants=[
                 {"Код": "123", "Цена": "1000"},
                 {"Код": "456", "Цена": 1500.75},
@@ -356,13 +382,14 @@ async def upload_prices(watch_remnants, campaign_id, market_token):
         )
         
     Примеры  некорректного ввода:
-        await upload_prices(
+        >>> await upload_prices(
             watch_remnants=[
                 {"Код": "123", "Цена": "abc"},  # Некорректное значение цены
             ],
             campaign_id=123,  # Некорректный тип, ожидается строка
             market_token=None  # Некорректный тип, ожидается строка
         )
+        ValueError
     """
     offer_ids = get_offer_ids(campaign_id, market_token)
     prices = create_prices(watch_remnants, offer_ids)
@@ -380,19 +407,23 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
     Аргументы:
         watch_remnants (list): Список словарей, содержащих информацию о часах.
             Каждый словарь должен содержать ключи:
-                - "Код" (str): Код товара.
-                - "Количество" (str): Количество товара (например, "1", ">10").
+                "Код" (str): Код товара.
+                "Количество" (str): Количество товара (например, "1", ">10").
         campaign_id (str): Идентификатор кампании.
         market_token (str): Токен для доступа к API рынка.
         warehouse_id (str): Идентификатор склада, к которому относятся запасы.
 
     Возвращает:
         tuple: Кортеж из двух элементов:
-            - list: Список словарей с не нулевыми остатками, которые были загружены на рынок.
-            - list: Список всех остатков, которые были созданы.
+            list: Список словарей с не нулевыми остатками, которые были загружены на рынок.
+            list: Список всех остатков, которые были созданы.
+
+    Исключения:
+        ValueError: Если  аргументы  имеют  неверный  формат.
+        KeyError: если  в словаре watch_remnants отсутствует необходимый  ключ.
 
     Примеры  корректного ввода:
-        await upload_stocks(
+        >>> await upload_stocks(
             watch_remnants=[
                 {"Код": "123", "Количество": "5"},
                 {"Код": "456", "Количество": ">10"},
@@ -404,7 +435,7 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
         )
         
     Примеры  некорректного ввода:
-        await upload_stocks(
+        >>> await upload_stocks(
             watch_remnants=[
                 {"Код": "123", "Количество": "abc"},  # Некорректное значение количества
             ],
@@ -412,6 +443,7 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
             market_token=None,  # Некорректный тип, ожидается строка
             warehouse_id=456  # Некорректный тип, ожидается строка
         )
+        ValueError
     """
     offer_ids = get_offer_ids(campaign_id, market_token)
     stocks = create_stocks(watch_remnants, offer_ids, warehouse_id)
@@ -424,27 +456,6 @@ async def upload_stocks(watch_remnants, campaign_id, market_token, warehouse_id)
 
 
 def main():
-    """ Главная функция для обновления остатков и цен на товары в системе FBS и DBS.
-
-    Эта функция выполняет следующие действия:
-    1. Загружает необходимые переменные окружения.
-    2. Скачивает остатки товаров.
-    3. Обновляет остатки и цены для кампаний FBS и DBS.
-    
-    Вызывает исключения в случае ошибок соединения или превышения времени ожидания.
-
-    Примеры  корректного ввода:
-        Если все переменные окружения корректны и все функции, вызываемые в этой функции,
-        работают без ошибок, то функция выполнит обновление остатков и цен.
-        
-    Примеры  некорректного ввода:
-        Если переменные окружения, такие как MARKET_TOKEN, FBS_ID, DBS_ID и т.д., не заданы,
-        либо если они имеют неверный формат или значения, функция вызовет исключение,
-        и выполнение будет прервано. Например:
-        - Если MARKET_TOKEN не задан, будет выброшено исключение при попытке его использования.
-        - Если функции, такие как download_stock() или upload_prices(), вызовут исключение,
-          то выполнение также будет прервано, и будет выведено сообщение об ошибке.
-    """
     env = Env()
     market_token = env.str("MARKET_TOKEN")
     campaign_fbs_id = env.str("FBS_ID")

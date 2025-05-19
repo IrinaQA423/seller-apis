@@ -32,14 +32,18 @@ def get_product_list(last_id, client_id, seller_token):
     Исключения:
         HTTPError: Если ответ от сервера содержит ошибку (например, 
         4xx или 5xx статус).
+        ValueError: если  один из аргументов пустой.
 
     Примеры корректного ввода:
-        product_list = get_product_list("12345", "your_client_id", "your_seller_token")
+        >>> product_list = get_product_list("12345", "your_client_id", "your_seller_token")
 
     Примеры некорректного ввода:
-        product_list = get_product_list("", "your_client_id", "your_seller_token")  # last_id пустой
-        product_list = get_product_list("12345", "", "your_seller_token")  # client_id пустой
-        product_list = get_product_list("12345", "your_client_id", "")  # seller_token пустой
+        >>> product_list = get_product_list("", "your_client_id", "your_seller_token")  
+        ValueError
+        >>> product_list = get_product_list("12345", "", "your_seller_token")
+        ValueError
+        >>> product_list = get_product_list("12345", "your_client_id", "")
+        ValueError
     """
     url = "https://api-seller.ozon.ru/v2/product/list"
     headers = {
@@ -75,14 +79,15 @@ def get_offer_ids(client_id, seller_token):
     Исключения:
         ValueError: Если client_id или seller_token пустые строки.
         ConnectionError: Если не удается установить соединение с API Озон.
-        Exception: Если возникла ошибка при получении данных.
-
+        
     Примеры корректного ввода:
-        offer_ids = get_offer_ids("123456789", "your_seller_token")
+        >>> offer_ids = get_offer_ids("123456789", "your_seller_token")
         
     Примеры некорректного ввода:
-        offer_ids = get_offer_ids("", "your_seller_token")  -> ValueError
-        offer_ids = get_offer_ids("123456789", "")          -> ValueError
+        >>> offer_ids = get_offer_ids("", "your_seller_token")
+        ValueError
+        >>> offer_ids = get_offer_ids("123456789", "")
+        ValueError
     """
     last_id = ""
     product_list = []
@@ -119,19 +124,26 @@ def update_price(prices: list, client_id, seller_token):
         неверный client_id, seller_token или формат prices).
 
     Примеры корректного ввода:
-        update_price(
+        >>> update_price(
             prices=[{'sku': '12345', 'price': 100.0}, {'sku': '67890', 'price': 200.0}],
             client_id='your_client_id',
             seller_token='your_seller_token'
         )
 
     Примеры некорректного ввода:
-        update_price(
+        >>> update_price(
             prices=[{'sku': '12345', 'price': 'сто'}, {'sku': '67890', 'price': -50}],
             client_id='your_client_id',
             seller_token='your_seller_token'
         )
-        # В этом случае цена 'сто' неверного формата, а -50 недопустима.
+        ValueError: 'price' не является числом или меньше нуля.
+
+        >>> update_price(
+            prices=[{'sku': '12345', 'price': 100.0}],
+            client_id='',
+            seller_token='your_seller_token'
+        )
+        HTTPError: client_id пустой.
     """
     url = "https://api-seller.ozon.ru/v1/product/import/prices"
     headers = {
@@ -163,13 +175,25 @@ def update_stocks(stocks: list, client_id, seller_token):
 
     Исключения:
         HTTPError: Если запрос к API завершился ошибкой.
+        ValueError: Если один из элементов в stocks имеет некорректный формат
 
     Примеры корректного ввода:
-        update_stocks([{'sku': '12345', 'quantity': 10}, {'sku': '67890', 'quantity': 5}], 'your_client_id', 'your_seller_token')
+        >>> update_stocks([{'sku': '12345', 'quantity': 10}, {'sku': '67890', 'quantity': 5}], 'your_client_id', 'your_seller_token')
 
     Примеры некорректного ввода:
-        update_stocks([{'sku': '12345', 'quantity': 'ten'}], 'your_client_id', 'your_seller_token') 
-        # Здесь 'quantity' должен быть целым числом, а не строкой.
+        >>> update_stocks(
+            [{'sku': '12345', 'quantity': 'ten'}], 
+            'your_client_id', 
+            'your_seller_token'
+        )
+        ValueError: Количество должно быть целым числом.
+
+        >>> update_stocks(
+            [{'sku': '12345', 'quantity': -5}], 
+            'your_client_id', 
+            'your_seller_token'
+        )
+        ValueError: Количество не может быть отрицательным.
     """
     url = "https://api-seller.ozon.ru/v1/product/import/stocks"
     headers = {
@@ -205,17 +229,15 @@ def download_stock():
     Исключения:
         requests.HTTPError: Если запрос к URL завершился ошибкой.
         ValueError: Если структура загруженного Excel-файла некорректна.
+        FileNotFoundError: Если файл "ostatki.xls" не существует.
 
     Примеры корректного ввода:
-        - Функция не принимает параметров и всегда загружает 
-          файл с заранее заданного URL.
-
+        >>> stock_data = download_stock()
+        >>> print(stock_data)  
+        
     Примеры некорректного ввода:
-        - Если веб-сайт недоступен, функция вызовет исключение 
-          при попытке загрузки файла.
-        - Если структура Excel-файла изменится и не будет 
-          содержать ожидаемого заголовка на 17-й строке, 
-          это приведет к ошибке при чтении файла.
+        >>> stock_data = download_stock("https://invalid-url.com")
+        HTTPError
 
     Примечания:
         - Функция удаляет загруженный файл "ostatki.xls" после его обработки.
@@ -246,28 +268,28 @@ def create_stocks(watch_remnants, offer_ids):
     Аргументы:
         watch_remnants (list): Список словарей, содержащих информацию о недостающих запасах.
             Каждый словарь должен содержать ключи:
-                - "Код" (str): Уникальный идентификатор товара.
-                - "Количество" (str): Количество товара, представленное как строка. 
-                  Допустимые значения:
-                    - ">10": интерпретируется как 100.
-                    - "1": интерпретируется как 0.
-                    - Любое другое число: интерпретируется как целое число.
+                "Код" (str): Уникальный идентификатор товара.
+                "Количество" (str): Количество товара, представленное как строка. 
+                Допустимые значения:
+                    ">10": интерпретируется как 100.
+                    "1": интерпретируется как 0.
+                    Любое другое число: интерпретируется как целое число.
         offer_ids (list): Список идентификаторов товаров (str), для которых нужно создать остатки.
 
     Возвращает:
         list: Список словарей, каждый из которых содержит:
-            - "offer_id" (str): Идентификатор товара.
-            - "stock" (int): Количество товара на складе.
+            "offer_id" (str): Идентификатор товара.
+            "stock" (int): Количество товара на складе.
 
     Исключения:
         ValueError: Если "Количество" в watch_remnants не является строкой или не соответствует ожидаемым значениям.
 
     Примеры корректного ввода:
-        create_stocks([{"Код": "123", "Количество": ">10"}, {"Код": "456", "Количество": "5"}], ["123", "456", "789"])
+        >>> create_stocks([{"Код": "123", "Количество": ">10"}, {"Код": "456", "Количество": "5"}], ["123", "456", "789"])
         [{'offer_id': '123', 'stock': 100}, {'offer_id': '456', 'stock': 5}, {'offer_id': '789', 'stock': 0}]
 
     Примеры некорректного ввода:
-        create_stocks([{"Код": "123", "Количество": "abc"}], ["123"]) 
+        >>> create_stocks([{"Код": "123", "Количество": "abc"}], ["123"]) 
         ValueError: Неверное значение для количества товара. Ожидается строка, соответствующая формату.
     """
     stocks = []
@@ -299,22 +321,26 @@ def create_prices(watch_remnants, offer_ids):
     Возвращает:
         list: Список словарей, каждый из которых содержит информацию о цене.
             Каждый словарь имеет следующие ключи:
-                - "auto_action_enabled": Значение "UNKNOWN".
-                - "currency_code": Значение "RUB".
-                - "offer_id": Идентификатор предложения.
-                - "old_price": Значение "0".
-                - "price": Преобразованная цена из "Цена" в требуемый формат.
+                "auto_action_enabled": Значение "UNKNOWN".
+                "currency_code": Значение "RUB".
+                "offer_id": Идентификатор предложения.
+                "old_price": Значение "0".
+                "price": Преобразованная цена из "Цена" в требуемый формат.
+
+    Исключения:
+        ValueError: Если цена товара не может быть преобразована в подходящий формат 
+        (например, если цена не является числом или содержит недопустимые значения).
 
     Примеры корректного ввода:
-        watch_remnants = [{'Код': '123', 'Цена': 1000.0}]
-        offer_ids = {'123'}
-        create_prices(watch_remnants, offer_ids)
+        >>> watch_remnants = [{'Код': '123', 'Цена': 1000.0}]
+        >>> offer_ids = {'123'}
+        >>> prices = create_prices(watch_remnants, offer_ids)
         [{'auto_action_enabled': 'UNKNOWN', 'currency_code': 'RUB', 'offer_id': '123', 'old_price': '0', 'price': 1000.0}]
 
-    Примеры корректного ввода:(Код не найден в offer_ids):
-        watch_remnants = [{'Код': '456', 'Цена': 2000.0}]
-        offer_ids = {'123'}
-        create_prices(watch_remnants, offer_ids)
+    Примеры некорректного ввода:(Код не найден в offer_ids):
+        >>> watch_remnants = [{'Код': '456', 'Цена': 2000.0}]
+        >>> offer_ids = {'123'}
+        >>> prices = create_prices(watch_remnants, offer_ids)
         []
     """
     prices = []
@@ -352,14 +378,20 @@ def price_conversion(price: str) -> str:
         AttributeError: Если ввод не является строкой (например, None или другой тип).
 
     Примеры корректного ввода:
-        "5'990.00 руб." -> "5990"
-        "250€" -> "250"
-        "1000" -> "1000"
+        >>> "5'990.00 руб."
+        "5990"
+        >>> "250€"
+        "250"
+        >>> "1000"
+        "1000"
 
     Примеры некорректного ввода:
-        "six dollars" -> ""
-        "" -> ""
-        None -> Raises AttributeError
+        >>> "six dollars" 
+        ""
+        >>>  "" 
+        ""
+        >>> None
+        AttributeError
     """
     return re.sub("[^0-9]", "", price.split(".")[0])
 
@@ -384,14 +416,20 @@ def divide(lst: list, n: int):
         TypeError: Если lst не является списком.
 
     Примеры корректного ввода:
-        divide([1, 2, 3, 4, 5], 2) -> [[1, 2], [3, 4], [5]]
-        divide(['a', 'b', 'c', 'd'], 3) -> [['a', 'b', 'c'], ['d']]
-        divide([], 1) -> []
+        >>> divide([1, 2, 3, 4, 5], 2)
+        [[1, 2], [3, 4], [5]]
+        >>> divide(['a', 'b', 'c', 'd'], 3)
+        [['a', 'b', 'c'], ['d']]
+        >>> divide([], 1)
+        []
 
     Примеры некорректного ввода:
-        divide([1, 2, 3], 0) -> Raises ValueError (деление на ноль)
-        divide([1, 2, 3], -1) -> Raises ValueError (отрицательное значение n)
-        divide(None, 2) -> Raises TypeError (тип lst не list)
+        >>> divide([1, 2, 3], 0)
+        ValueError: деление на ноль
+        >>> divide([1, 2, 3], -1)
+        ValueError: отрицательное значение n
+        >>> divide(None, 2)
+        TypeError: тип lst не list
     """
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
@@ -415,17 +453,17 @@ async def upload_prices(watch_remnants, client_id, seller_token):
         ValueError: Если watch_remnants пуст или client_id или seller_token недействительны.
 
     Примеры корректного ввода:
-        await upload_prices(watch_remnants, "client123", "token456")
+        >>> await upload_prices(watch_remnants, "client123", "token456")
         ['price1', 'price2', 'price3']
 
     Примеры некорректного ввода:
-        await upload_prices([], "client123", "token456")
+        >>> await upload_prices([], "client123", "token456")
         ValueError: watch_remnants не должен быть пустым.
 
-        await upload_prices(watch_remnants, "", "token456")
+        >>> await upload_prices(watch_remnants, "", "token456")
         ValueError: client_id не может быть пустым.
 
-        await upload_prices(watch_remnants, "client123", "")
+        >>> await upload_prices(watch_remnants, "client123", "")
         ValueError: seller_token не может быть пустым.
     """
     offer_ids = get_offer_ids(client_id, seller_token)
@@ -451,21 +489,22 @@ async def upload_stocks(watch_remnants, client_id, seller_token):
 
     Возвращает:
         tuple: Кортеж из двух элементов:
-            - list: Список остатков, где количество на складе не равно нулю.
-            - list: Исходный список остатков товаров.
+            list: Список остатков, где количество на складе не равно нулю.
+            list: Исходный список остатков товаров.
 
     Исключения:
         ValueError: Если `watch_remnants` не является списком или если
             элементы списка не содержат необходимых ключей.
-        AuthenticationError: Если токен продавца недействителен или
-            идентификатор клиента не найден.
-
+        TypeError: Если тип `watch_remnants` не является списком.
+        
     Примеры корректного ввода:
-        await upload_stocks([{'offer_id': '123', 'stock': 10}], 'client_1', 'token_abc')
+        >>> await upload_stocks([{'offer_id': '123', 'stock': 10}], 'client_1', 'token_abc')
 
     Примеры некорректного ввода:
-        await upload_stocks('не список', 'client_1', 'token_abc')  -> TypeError
-        await upload_stocks([{'offer_id': '123'}], 'client_1', 'token_abc')  -> ValueError
+        >>> await upload_stocks('не список', 'client_1', 'token_abc')
+        TypeError
+        >>> await upload_stocks([{'offer_id': '123'}], 'client_1', 'token_abc')
+        ValueError
     """
     offer_ids = get_offer_ids(client_id, seller_token)
     stocks = create_stocks(watch_remnants, offer_ids)
@@ -476,31 +515,6 @@ async def upload_stocks(watch_remnants, client_id, seller_token):
 
 
 def main():
-    """Основная функция для обновления остатков и цен товаров.
-
-    Эта функция инициализирует необходимые параметры окружения, 
-    загружает идентификаторы товаров и остатки товаров, 
-    а затем обновляет остатки и цены на основе полученных данных.
-
-    Исключения:
-        - requests.exceptions.ReadTimeout: возникает, если превышено время ожидания 
-          при выполнении сетевых запросов.
-        - requests.exceptions.ConnectionError: возникает, если произошла ошибка 
-          соединения при выполнении сетевых запросов.
-        - Exception: обрабатывает все другие исключения и выводит сообщение об ошибке.
-
-    Примеры корректного ввода:
-        - Переменные окружения 'SELLER_TOKEN' и 'CLIENT_ID' должны быть установлены.
-        - Функции `get_offer_ids`, `download_stock`, `create_stocks`, `create_prices`, 
-          `update_stocks` и `update_price` должны быть реализованы и возвращать 
-          ожидаемые значения.
-
-    Примеры некорректного ввода:
-        - Отсутствие переменных окружения 'SELLER_TOKEN' или 'CLIENT_ID'.
-        - Неверные значения, возвращаемые из функций, которые могут привести 
-          к исключениям (например, если `get_offer_ids` возвращает None).
-        - Проблемы с сетью, такие как таймауты или ошибки соединения.
-    """
     env = Env()
     seller_token = env.str("SELLER_TOKEN")
     client_id = env.str("CLIENT_ID")
